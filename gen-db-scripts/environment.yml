@@ -1,0 +1,7 @@
+name: lindsie
+dependencies:
+  - pandas
+  - pip
+  - python=3
+  - sqlalchemy 
+  - mysqlclient
