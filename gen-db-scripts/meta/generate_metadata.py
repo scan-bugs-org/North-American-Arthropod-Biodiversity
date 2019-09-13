@@ -6,12 +6,16 @@ import pandas as pd
 import pickle
 
 meta_dir = os.path.dirname(__file__)
+
+table_names_file = os.path.join(meta_dir, "table-names.pkl")
+
 institutions_fields_file = os.path.join(meta_dir, "institutions-fields.pkl")
 omcollections_fields_file = os.path.join(meta_dir, "omcollections-fields.pkl")
+
 omoccurrences_countries_file = os.path.join(meta_dir, "omoccurrences-countries.pkl")
-omoccurrences_fields_file = os.path.join(meta_dir, "omoccurrences-fields.pkl")
 omoccurrences_states_file = os.path.join(meta_dir, "omoccurrences-states.pkl")
-table_names_file = os.path.join(meta_dir, "table-names.pkl")
+omoccurrences_fields_file = os.path.join(meta_dir, "omoccurrences-fields.pkl")
+
 taxa_fields_file = os.path.join(meta_dir, "taxa-fields.pkl")
 taxaenumtree_fields_file = os.path.join(meta_dir, "taxaenumtree-fields.pkl")
 taxonunits_fields_file = os.path.join(meta_dir, "taxonunits-fields.pkl")
@@ -28,7 +32,7 @@ institutions_fields = {
     "stateProvince": t_str,
     "postalCode": t_str,
     "country": t_str,
-    "initialTimestamp": t_timestamp,
+    "intialTimeStamp": t_timestamp,     # Spelled wrong in db
     "modifiedTimestamp": t_timestamp
 }
 
@@ -52,9 +56,9 @@ omoccurrences_fields = {
     "coordinateUncertaintyInMeters": t_float,
     "country": t_str,
     "county": t_str,
-    "dateEntered as initialTimestamp": t_timestamp,
+    "dateEntered": t_timestamp,
     "dateIdentified": t_str,
-    "dateLastModified as modifiedTimestamp": t_timestamp,
+    "dateLastModified": t_timestamp,
     "day": t_uint32(),
     "decimalLatitude": t_float,
     "decimalLongitude": t_float,
@@ -205,7 +209,7 @@ with open(omoccurrences_countries_file, "wb") as f:
     pickle.dump(omoccurrences_countries, f)
 
 with open(omoccurrences_fields_file, "wb") as f:
-    pickle.dump(omoccurrences_countries, f)
+    pickle.dump(omoccurrences_fields, f)
 
 with open(omoccurrences_states_file, "wb") as f:
     pickle.dump(omoccurrences_states, f)

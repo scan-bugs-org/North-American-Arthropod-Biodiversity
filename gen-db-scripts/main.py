@@ -9,6 +9,9 @@ import sqlite3
 from datetime import datetime
 from datetime import date
 
+ANSI_CURSOR_BEGINNING_OF_LINE = u"\u001b[1000D"
+ANSI_CURSOR_CLEAR_LINE = u"\u001b[0K"
+
 sql_config_file = os.path.join(os.environ["HOME"], ".my.cnf")
 sqlite_create_file = os.path.join(os.path.dirname(__file__), "create-db.sql")
 
@@ -68,8 +71,8 @@ def meta_load_omoccurrences_countries(countries_array_file):
 
 def meta_load_sql_uri_src(mysql_config_file, db_name):
     config_parser = configparser.ConfigParser()
-    config_parser.read(sql_config_file)
-    sql_config = mysql_config_file["client"]
+    config_parser.read(mysql_config_file)
+    sql_config = config_parser["client"]
     return "mysql://{}:{}@{}/{}".format(
         sql_config["user"],
         sql_config["password"],
@@ -78,13 +81,13 @@ def meta_load_sql_uri_src(mysql_config_file, db_name):
     )
 
 
-def get_taxonunits_table(cache_file, sql_uri_src, tbl_fields):
+def get_taxonunits_table(cache_file, sql_uri_src, fields, dtypes):
     if not os.path.exists(cache_file):
         print("Loading taxonunits from source database...")
         taxonunits_df = pd.read_sql(
-            "select {} from taxonunits".format(", ".join(tbl_fields["taxonunits"].keys())),
+            "select {} from taxonunits".format(", ".join(fields)),
             sql_uri_src
-        ).astype(tbl_fields["taxonunits"])
+        ).astype(dtypes)
         taxonunits_df.to_pickle(cache_file)
     else:
         print("Loading taxonunits from cache...")
@@ -140,18 +143,19 @@ def get_institutions_table(cache_file, sql_uri_src, fields, iids, dtypes):
     if not os.path.exists(cache_file):
         print("Loading institutions from source database...")
         institutions_df = pd.read_sql(
-            "select {} from institutions where iid in ()".format(
+            "select {} from institutions where iid in ({})".format(
                 ", ".join(fields),
                 ", ".join(iids)
             ),
             sql_uri_src
         ).astype(dtypes)
-        institutions_df.to_pickle(taxonunits_cache_file)
+        institutions_df.to_pickle(cache_file)
     else:
-        print("Loading taxonunits from cache...")
+        print("Loading institutions from cache...")
         institutions_df = pd.read_pickle(cache_file)
     print("Found {} rows in institutions".format(len(institutions_df.index)))
     print("Finished loading institutions\n")
+    institutions_df = institutions_df.rename({"intialTimeStamp": "initialTimestamp"})
     return institutions_df
 
 
@@ -168,18 +172,23 @@ def get_taxaenumtree_table(cache_file, sql_uri_src, fields, initial_tids, dtypes
             ).astype(dtypes)
         ]
 
-        while len(taxa_recurse[-1].index) > 0:
+        while True:
             tids = np.unique(
-                taxa_recurse[-1]["parenttid"][~np.isnan(taxa_recurse[-1]["parenttid"])]
+                taxa_recurse[-1]["parenttid"][~pd.isna(taxa_recurse[-1]["parenttid"])][taxa_recurse[-1]["parenttid"] != taxa_recurse[-1]["tid"]]
             ).astype(str).tolist()
+            if len(tids) <= 0:
+                break
+            print("{}{}".format(ANSI_CURSOR_BEGINNING_OF_LINE, ANSI_CURSOR_CLEAR_LINE), end='', flush=True)
+            print("Found {} new taxa".format(len(tids)), flush=True)
             current_taxa = pd.read_sql(
-                "select {} from taxaenumtree where parenttid in ({})".format(
+                "select {} from taxaenumtree where tid in ({})".format(
                     ", ".join(fields),
                     ", ".join(tids)
                 ),
                 sql_uri_src
             ).astype(dtypes)
             taxa_recurse.append(current_taxa)
+        print()
 
         taxaenumtree_df = pd.DataFrame(data=taxa_recurse)
         taxaenumtree_df.to_pickle(cache_file)
@@ -209,6 +218,8 @@ def get_taxa_table(cache_file, sql_uri_src, fields, tids, dtypes):
     print("Finished loading taxa\n")
     return taxa_df
 
+# TODO: All omoccurrence data, rename dateEntered & dateLastmodified to initialTimestamp and modifiedTimestamp
+
 
 def main():
     # Load metadata
@@ -224,7 +235,14 @@ def main():
     if not os.path.exists(cache_dir):
         os.mkdir(cache_dir)
 
-    tbl_taxonunits = get_taxonunits_table(taxonunits_cache_file, sql_uri_src, table_fields)
+    taxonunits_fields_dtypes = table_fields["taxonunits"]
+    taxonunits_field_names = taxonunits_fields_dtypes.keys()
+    tbl_taxonunits = get_taxonunits_table(
+        taxonunits_cache_file,
+        sql_uri_src,
+        taxonunits_field_names,
+        taxonunits_fields_dtypes
+    )
 
     omoccurrences_fields_dtypes = table_fields["omoccurrences"]
     omoccurrences_min = get_omoccurrences_min(
@@ -253,12 +271,12 @@ def main():
         institutions_cache_file,
         sql_uri_src,
         institutions_field_names,
-        np.unique(tbl_omcollections["iid"]).astype(str).tolist(),
+        np.unique(tbl_omcollections["iid"][~pd.isna(tbl_omcollections["iid"])]).astype(str).tolist(),
         institutions_fields_dtypes
     )
 
     occurrence_tids = np.unique(
-        omoccurrences_min["tidinterpreted"][~np.isnan(omoccurrences_min["tidinterpreted"])]
+        omoccurrences_min["tidinterpreted"][~pd.isna(omoccurrences_min["tidinterpreted"])]
     ).astype(str).tolist()
     taxaenumtree_field_dtypes = table_fields["taxaenumtree"]
     taxaenumtree_field_names = table_fields["taxaenumtree"].keys()
