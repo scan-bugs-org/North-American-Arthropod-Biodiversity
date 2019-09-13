@@ -12,32 +12,34 @@ from datetime import date
 ANSI_CURSOR_BEGINNING_OF_LINE = u"\u001b[1000D"
 ANSI_CURSOR_CLEAR_LINE = u"\u001b[0K"
 
-sql_config_file = os.path.join(os.environ["HOME"], ".my.cnf")
-sqlite_create_file = os.path.join(os.path.dirname(__file__), "create-sqlite-db.sql")
+META_DIR = os.path.join(os.path.dirname(__file__), "meta")
+CACHE_DIR = os.path.join(os.path.dirname(__file__), ".cache")
 
-meta_dir = os.path.join(os.path.dirname(__file__), "meta")
-omoccurrences_countries_file = os.path.join(meta_dir, "omoccurrences-countries.pkl")
-omoccurrences_states_file = os.path.join(meta_dir, "omoccurrences-states.pkl")
-table_names_file = os.path.join(meta_dir, "table-names.pkl")
-taxa_fields_file = os.path.join(meta_dir, "taxa-fields.pkl")
+SQL_CONFIG_FILE = os.path.join(os.environ["HOME"], ".my.cnf")
+SQLITE_CREATE_FILE = os.path.join(os.path.dirname(__file__), "create-sqlite-db.sql")
 
-omoccurrences_longitude_range = [-178.2, -49.0]
-omoccurrences_latitude_range = [6.6, 83.3]
+OMOCCURRENCES_COUNTRIES_FILE = os.path.join(META_DIR, "omoccurrences-countries.pkl")
+OMOCCURRENCES_PROVINCES_FILE = os.path.join(META_DIR, "omoccurrences-states.pkl")
+TABLE_NAMES_FILE = os.path.join(META_DIR, "table-names.pkl")
+TAXA_FIELDS_FILE = os.path.join(META_DIR, "taxa-fields.pkl")
 
-cache_dir = ".cache"
-omoccurrences_min_cache_file = os.path.join(cache_dir, "occid.pkl.gz")
-omoccurrences_cache_file = os.path.join(cache_dir, "tbl_omoccurrences.pkl.gz")
-omcollections_cache_file = os.path.join(cache_dir, "tbl_omcollections.pkl.gz")
-taxa_cache_file = os.path.join(cache_dir, "tbl_taxa.pkl.gz")
-taxaenumtree_cache_file = os.path.join(cache_dir, "tbl_taxaenumtree.pkl.gz")
-taxonunits_cache_file = os.path.join(cache_dir, "tbl_taxonunits.pkl.gz")
-institutions_cache_file = os.path.join(cache_dir, "tbl_institutions.pkl.gz")
+OMOCCURRENCES_LATITUDE_RANGE = [-178.2, -49.0]
+OMOCCURRENCES_LONGITUDE_RANGE = [6.6, 83.3]
 
-sql_fmt_occid = "select occid, collid, tidinterpreted from omoccurrences "
-sql_fmt_occid += "where (decimalLatitude between {} and {} and decimalLongitude between {} and {}) "
-sql_fmt_occid += "or lower(country) in ({}) "
-sql_fmt_occid += "or lower(stateProvince) in ({});"
+OMOCCURRENCES_MIN_CACHE_FILE = os.path.join(CACHE_DIR, "occid.pkl.gz")
+OMOCCURRENCES_CACHE_FILE = os.path.join(CACHE_DIR, "tbl_omoccurrences.pkl.gz")
+OMCOLLECTIONS_CACHE_FILE = os.path.join(CACHE_DIR, "tbl_omcollections.pkl.gz")
+TAXA_CACHE_FILE = os.path.join(CACHE_DIR, "tbl_taxa.pkl.gz")
+TAXAENUMTREE_CACHE_FILE = os.path.join(CACHE_DIR, "tbl_taxaenumtree.pkl.gz")
+TAXONUNITS_CACHE_FILE = os.path.join(CACHE_DIR, "tbl_taxonunits.pkl.gz")
+INSTITUTIONS_CACHE_FILE = os.path.join(CACHE_DIR, "tbl_institutions.pkl.gz")
 
+SQL_FMT_OCC_MIN = "select occid, collid, tidinterpreted from omoccurrences "
+SQL_FMT_OCC_MIN += "where (decimalLatitude between {} and {} and decimalLongitude between {} and {}) "
+SQL_FMT_OCC_MIN += "or lower(country) in ({}) "
+SQL_FMT_OCC_MIN += "or lower(stateProvince) in ({});"
+
+kingdom_rankId = 10
 
 def sqlite_create_db(sqlite_create_script, sqlite_outfile):
     """
@@ -75,7 +77,7 @@ def meta_load_table_fields(table_names_array):
     """
     table_fields = dict()
     for tn in table_names_array:
-        with open(os.path.join(meta_dir, "{}-fields.pkl".format(tn)), "rb") as f:
+        with open(os.path.join(META_DIR, "{}-fields.pkl".format(tn)), "rb") as f:
             table_fields[tn] = pkl.load(f)
     return table_fields
 
@@ -161,7 +163,7 @@ def get_omoccurrences_min(cache_file, sql_uri_src, occ_countries, occ_provinces,
     if not os.path.exists(cache_file):
         print("Loading occids from source database...")
         occid_df = pd.read_sql(
-            sql_fmt_occid.format(
+            SQL_FMT_OCC_MIN.format(
                 occ_lat_range[0],
                 occ_lat_range[1],
                 occ_lon_range[0],
@@ -253,35 +255,66 @@ def get_taxaenumtree_table(cache_file, sql_uri_src, fields, initial_tids, dtypes
     """
     if not os.path.exists(cache_file):
         print("Loading taxaenumtree from source database...")
-        taxa_recurse = [
-            pd.read_sql(
-                "select {} from taxaenumtree where tid in ({})".format(
-                    ", ".join(fields),
-                    ", ".join(initial_tids)
-                ),
-                sql_uri_src
-            ).astype(dtypes)
-        ]
+        taxaenumtree_df = pd.read_sql(
+            "select distinct {} from taxaenumtree where tid in ({})".format(
+                ", ".join(fields),
+                ", ".join(initial_tids)
+            ),
+            sql_uri_src
+        ).astype(dtypes)
 
-        while True:
-            tids = np.unique(
-                taxa_recurse[-1]["parenttid"][~pd.isna(taxa_recurse[-1]["parenttid"])][taxa_recurse[-1]["parenttid"] != taxa_recurse[-1]["tid"]]
-            ).astype(str).tolist()
-            if len(tids) <= 0:
-                break
-            print("{}{}".format(ANSI_CURSOR_BEGINNING_OF_LINE, ANSI_CURSOR_CLEAR_LINE), end='', flush=True)
+        taxaenumtree_df.drop_duplicates(
+            subset=["tid", "parenttid"],
+            keep="last",
+            inplace=True
+        )
+
+        print(
+            "{}{}".format(
+                ANSI_CURSOR_BEGINNING_OF_LINE,
+                ANSI_CURSOR_CLEAR_LINE
+            ),
+            end='',
+            flush=True
+        )
+        print("Found {} new taxa".format(len(taxaenumtree_df.index)), flush=True)
+
+        last_len = -1
+        while len(taxaenumtree_df.index) != last_len:
+            last_len = len(taxaenumtree_df.index)
+            tids = taxaenumtree_df["parenttid"][~pd.isna(taxaenumtree_df["parenttid"])]
+            tids = np.unique(tids)
+            tids = tids.astype(str).tolist()
+
+            print(
+                "{}{}".format(
+                    ANSI_CURSOR_BEGINNING_OF_LINE,
+                    ANSI_CURSOR_CLEAR_LINE
+                ),
+                end='',
+                flush=True
+            )
             print("Found {} new taxa".format(len(tids)), flush=True)
-            current_taxa = pd.read_sql(
-                "select {} from taxaenumtree where tid in ({})".format(
+
+            new_taxa = pd.read_sql(
+                "select distinct {} from taxaenumtree where tid in ({})".format(
                     ", ".join(fields),
                     ", ".join(tids)
                 ),
                 sql_uri_src
             ).astype(dtypes)
-            taxa_recurse.append(current_taxa)
+
+            taxaenumtree_df = pd.concat(
+                [taxaenumtree_df, new_taxa],
+                ignore_index=True
+            )
+            taxaenumtree_df.drop_duplicates(
+                subset=["tid", "parenttid"],
+                inplace=True,
+                keep="last"
+            )
         print()
 
-        taxaenumtree_df = pd.DataFrame(data=taxa_recurse)
         taxaenumtree_df.to_pickle(cache_file)
     else:
         print("Loading taxaenumtree from cache...")
@@ -329,20 +362,20 @@ def main():
     # Load metadata
     today_timestamp = date.today().strftime("%Y-%m-%d")
     sqlite_outfile = os.path.join(os.path.dirname(__file__), "{}_symbscan.sqlite".format(today_timestamp))
-    table_names = meta_load_table_names(table_names_file)
+    table_names = meta_load_table_names(TABLE_NAMES_FILE)
     table_fields = meta_load_table_fields(table_names)
-    omoccurrences_provinces = meta_load_omoccurrences_provinces(omoccurrences_states_file)
-    omoccurrences_countries = meta_load_omoccurrences_countries(omoccurrences_countries_file)
-    sql_uri_src = meta_load_sql_uri_src(sql_config_file, "symbscan")
+    omoccurrences_provinces = meta_load_omoccurrences_provinces(OMOCCURRENCES_PROVINCES_FILE)
+    omoccurrences_countries = meta_load_omoccurrences_countries(OMOCCURRENCES_COUNTRIES_FILE)
+    sql_uri_src = meta_load_sql_uri_src(SQL_CONFIG_FILE, "symbscan")
 
     # Create cache directory
-    if not os.path.exists(cache_dir):
-        os.mkdir(cache_dir)
+    if not os.path.exists(CACHE_DIR):
+        os.mkdir(CACHE_DIR)
 
     taxonunits_fields_dtypes = table_fields["taxonunits"]
     taxonunits_field_names = taxonunits_fields_dtypes.keys()
     tbl_taxonunits = get_taxonunits_table(
-        taxonunits_cache_file,
+        TAXONUNITS_CACHE_FILE,
         sql_uri_src,
         taxonunits_field_names,
         taxonunits_fields_dtypes
@@ -350,19 +383,19 @@ def main():
 
     omoccurrences_fields_dtypes = table_fields["omoccurrences"]
     omoccurrences_min = get_omoccurrences_min(
-        omoccurrences_min_cache_file,
+        OMOCCURRENCES_MIN_CACHE_FILE,
         sql_uri_src,
         omoccurrences_countries,
         omoccurrences_provinces,
-        omoccurrences_latitude_range,
-        omoccurrences_longitude_range,
+        OMOCCURRENCES_LONGITUDE_RANGE,
+        OMOCCURRENCES_LATITUDE_RANGE,
         {k: v for k, v in omoccurrences_fields_dtypes.items() if k in ["occid", "collid", "tidinterpreted"]}
     )
 
     omcollections_fields_dtypes = table_fields["omcollections"]
     omcollections_field_names = omcollections_fields_dtypes.keys()
     tbl_omcollections = get_omcollections_table(
-        omcollections_cache_file,
+        OMCOLLECTIONS_CACHE_FILE,
         sql_uri_src,
         omcollections_field_names,
         np.unique(omoccurrences_min["collid"]).astype(str).tolist(),
@@ -372,7 +405,7 @@ def main():
     institutions_fields_dtypes = table_fields["institutions"]
     institutions_field_names = institutions_fields_dtypes.keys()
     tbl_institutions = get_institutions_table(
-        institutions_cache_file,
+        INSTITUTIONS_CACHE_FILE,
         sql_uri_src,
         institutions_field_names,
         np.unique(tbl_omcollections["iid"][~pd.isna(tbl_omcollections["iid"])]).astype(str).tolist(),
@@ -386,7 +419,7 @@ def main():
     taxaenumtree_field_names = table_fields["taxaenumtree"].keys()
 
     tbl_taxaenumtree = get_taxaenumtree_table(
-        taxaenumtree_cache_file,
+        TAXAENUMTREE_CACHE_FILE,
         sql_uri_src,
         taxaenumtree_field_names,
         occurrence_tids,
@@ -397,7 +430,7 @@ def main():
     taxa_field_names = taxa_fields_dtypes.keys()
     all_taxa_tids = np.unique(tbl_taxaenumtree["tid"]).astype(str).tolist()
     tbl_taxa = get_taxa_table(
-        taxa_cache_file,
+        TAXA_CACHE_FILE,
         sql_uri_src,
         taxa_field_names,
         all_taxa_tids,
@@ -405,7 +438,7 @@ def main():
     )
 
     if not os.path.exists(sqlite_outfile):
-        sqlite_create_db(sqlite_create_file, sqlite_outfile)
+        sqlite_create_db(SQLITE_CREATE_FILE, sqlite_outfile)
 
 
 if __name__ == "__main__":
