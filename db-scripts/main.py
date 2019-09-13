@@ -140,6 +140,7 @@ def get_taxonunits_table(cache_file, sql_uri_src, fields, dtypes):
         taxonunits_df = pd.read_pickle(cache_file)
     print("Found {} rows in taxonunits".format(len(taxonunits_df.index)))
     print("Finished loading taxonunits\n")
+
     return taxonunits_df
 
 
@@ -235,7 +236,10 @@ def get_institutions_table(cache_file, sql_uri_src, fields, iids, dtypes):
         institutions_df = pd.read_pickle(cache_file)
     print("Found {} rows in institutions".format(len(institutions_df.index)))
     print("Finished loading institutions\n")
-    institutions_df = institutions_df.rename({"intialTimeStamp": "initialTimestamp"})
+    institutions_df.rename(
+        columns={"intialTimeStamp": "initialTimestamp"},
+        inplace=True
+    )
     return institutions_df
 
 
@@ -439,6 +443,14 @@ def main():
 
     if not os.path.exists(sqlite_outfile):
         sqlite_create_db(SQLITE_CREATE_FILE, sqlite_outfile)
+
+    # Add the tables to sqlite db
+    with sqlite3.connect(sqlite_outfile) as sqlite_conn:
+        for tbl_name in ["taxonunits", "institutions", "taxa", "omcollections", "taxaenumtree"]:
+            tbl = eval("tbl_{}".format(tbl_name))
+            print("Loading {} into sqlite...".format(tbl_name))
+            tbl.to_sql(tbl_name, sqlite_conn, if_exists="append", index=False)
+            print("Finished\n")
 
 
 if __name__ == "__main__":

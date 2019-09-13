@@ -9,16 +9,15 @@ meta_dir = os.path.dirname(__file__)
 
 table_names_file = os.path.join(meta_dir, "table-names.pkl")
 
+taxonunits_fields_file = os.path.join(meta_dir, "taxonunits-fields.pkl")
 institutions_fields_file = os.path.join(meta_dir, "institutions-fields.pkl")
 omcollections_fields_file = os.path.join(meta_dir, "omcollections-fields.pkl")
+omoccurrences_fields_file = os.path.join(meta_dir, "omoccurrences-fields.pkl")
+taxa_fields_file = os.path.join(meta_dir, "taxa-fields.pkl")
+taxaenumtree_fields_file = os.path.join(meta_dir, "taxaenumtree-fields.pkl")
 
 omoccurrences_countries_file = os.path.join(meta_dir, "omoccurrences-countries.pkl")
 omoccurrences_states_file = os.path.join(meta_dir, "omoccurrences-states.pkl")
-omoccurrences_fields_file = os.path.join(meta_dir, "omoccurrences-fields.pkl")
-
-taxa_fields_file = os.path.join(meta_dir, "taxa-fields.pkl")
-taxaenumtree_fields_file = os.path.join(meta_dir, "taxaenumtree-fields.pkl")
-taxonunits_fields_file = os.path.join(meta_dir, "taxonunits-fields.pkl")
 
 t_uint32 = pd.Int32Dtype
 t_str = np.dtype("unicode")
