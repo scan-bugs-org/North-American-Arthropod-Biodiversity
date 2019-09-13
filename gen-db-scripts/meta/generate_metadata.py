@@ -22,7 +22,7 @@ t_timestamp = np.dtype("M")
 t_float = np.dtype("float32")
 
 institutions_fields = {
-    "iid": t_uint32,
+    "iid": t_uint32(),
     "institutionCode": t_str,
     "city": t_str,
     "stateProvince": t_str,
@@ -33,10 +33,10 @@ institutions_fields = {
 }
 
 omcollections_fields = {
-    "collid": t_uint32,
+    "collid": t_uint32(),
     "collectionCode": t_str,
     "collectionName": t_str,
-    "iid": t_uint32,
+    "iid": t_uint32(),
     "collType": t_str,
     "managementType": t_str,
     "initialTimestamp": t_timestamp
@@ -47,7 +47,7 @@ omoccurrences_fields = {
     "associatedOccurrences": t_str,
     "associatedTaxa": t_str,
     "catalogNumber": t_str,
-    "collid": t_uint32,
+    "collid": t_uint32(),
     "coordinatePrecision": t_float,
     "coordinateUncertaintyInMeters": t_float,
     "country": t_str,
@@ -55,10 +55,10 @@ omoccurrences_fields = {
     "dateEntered as initialTimestamp": t_timestamp,
     "dateIdentified": t_str,
     "dateLastModified as modifiedTimestamp": t_timestamp,
-    "day": t_uint32,
+    "day": t_uint32(),
     "decimalLatitude": t_float,
     "decimalLongitude": t_float,
-    "endDayOfYear": t_uint32,
+    "endDayOfYear": t_uint32(),
     "eventDate": t_str,
     "family": t_str,
     "fieldNotes": t_str,
@@ -74,9 +74,9 @@ omoccurrences_fields = {
     "locality": t_str,
     "locationID": t_str,
     "locationRemarks": t_str,
-    "month": t_uint32,
+    "month": t_uint32(),
     "municipality": t_str,
-    "occid": t_uint32,
+    "occid": t_uint32(),
     "occurrenceRemarks": t_str,
     "otherCatalogNumbers": t_str,
     "previousIdentifications": t_str,
@@ -92,30 +92,30 @@ omoccurrences_fields = {
     "stateProvince": t_str,
     "substrate": t_str,
     "taxonRemarks": t_str,
-    "tidinterpreted": t_uint32,
+    "tidinterpreted": t_uint32(),
     "typeStatus": t_str,
     "verbatimAttributes": t_str,
     "verbatimElevation": t_str,
     "verbatimEventDate": t_str,
-    "year": t_uint32
+    "year": t_uint32()
 }
 
 taxa_fields = {
-    "tid": t_uint32,
-    "rankId": t_uint32,
+    "tid": t_uint32(),
+    "rankId": t_uint32(),
     "sciName": t_str,
     "initialTimestamp": t_timestamp,
     "modifiedTimestamp": t_timestamp
 }
 
 taxaenumtree_fields = {
-    "tid": t_uint32,
-    "parenttid": t_uint32,
+    "tid": t_uint32(),
+    "parenttid": t_uint32(),
     "initialTimestamp": t_timestamp
 }
 
 taxonunits_fields = {
-    "rankid": t_uint32,
+    "rankid": t_uint32(),
     "rankname": t_str,
     "initialTimestamp": t_timestamp,
     "modifiedTimestamp": t_timestamp

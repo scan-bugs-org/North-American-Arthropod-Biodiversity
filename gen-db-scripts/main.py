@@ -51,20 +51,20 @@ def main():
 
     # Load metadata
     table_names = []
-    with open(table_names_file) as f:
+    with open(table_names_file, "rb") as f:
         table_names = pkl.load(f)
 
     table_fields = dict()
     for tn in table_names:
-        with open(os.path.join(meta_dir, "{}-fields.pkl".format(tn))) as f:
+        with open(os.path.join(meta_dir, "{}-fields.pkl".format(tn)), "rb") as f:
             table_fields[tn] = pkl.load(f)
 
     omoccurrences_states = []
-    with open(os.path.join(meta_dir, "omoccurrences-states.pkl")) as f:
+    with open(os.path.join(meta_dir, "omoccurrences-states.pkl"), "rb") as f:
         omoccurrences_states = pkl.load(f)
     
     omoccurrences_countries = []
-    with open(os.path.join("meta", "omoccurrences-countries.json")) as f:
+    with open(os.path.join("meta", "omoccurrences-countries.pkl"), "rb") as f:
         omoccurrences_countries = pkl.load(f)
 
     sql_config = configparser.ConfigParser()

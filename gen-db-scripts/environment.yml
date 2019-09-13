@@ -1,4 +1,4 @@
-name: lindsie
+name: arthropod_biodiversity
 dependencies:
   - pandas
   - pip
