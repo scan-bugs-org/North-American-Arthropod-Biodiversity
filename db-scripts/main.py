@@ -355,7 +355,61 @@ def get_taxa_table(cache_file, sql_uri_src, fields, tids, dtypes):
     print("Finished loading taxa\n")
     return taxa_df
 
-# TODO: All omoccurrence data, rename dateEntered & dateLastmodified to initialTimestamp and modifiedTimestamp
+
+def load_omoccurrences_table(sql_uri_src, sql_dst_file, fields, occids, dtypes):
+    """
+    :param cache_file: Path where taxa table should be cached
+    :param sql_uri_src: SQL URI to query
+    :param fields: List of field names to pull from sql_uri_src
+    :param occids: occids to filter for
+    :param dtypes: dict of [field_name] --> [pandas_dtype] for each of the
+    names in fields
+    :return: pandas dataframe with columns [fields] and data type [dtypes]
+    """
+    print("Loading omoccurrences from source database...")
+
+    chunk_size = 1000000
+    offset = 0
+    rows_loaded = 0
+    while True:
+        omoccurrences_df = pd.read_sql(
+            "select {} from omoccurrences where occid in ({}) limit {} offset {}".format(
+                ", ".join(fields),
+                ", ".join(occids),
+                chunk_size,
+                offset
+            ),
+            sql_uri_src
+        ).astype(dtypes)
+        omoccurrences_df.rename(
+            columns={"dateEntered": "initialTimestamp",
+                     "dateLastModified": "modifiedTimestamp"},
+            inplace=True
+        )
+        with sqlite3.connect(sql_dst_file) as sqlite_conn:
+            omoccurrences_df.to_sql(
+                "omoccurrences",
+                sqlite_conn,
+                if_exists="append",
+                index=False
+            )
+        rows_loaded += len(omoccurrences_df.index)
+        print(
+            "{}{}".format(
+                ANSI_CURSOR_BEGINNING_OF_LINE,
+                ANSI_CURSOR_CLEAR_LINE
+            ),
+            end='',
+            flush=True
+        )
+        print("Processed {} omoccurrences...".format(len(rows_loaded)), end='', flush=True)
+        if len(omoccurrences_df.index) < chunk_size:
+            break
+        offset += 1
+    print("\nFound {} rows in omoccurrences".format(rows_loaded))
+    print("Finished loading omoccurrences\n")
+
+    return omoccurrences_df
 
 
 def main():
@@ -451,6 +505,16 @@ def main():
             print("Loading {} into sqlite...".format(tbl_name))
             tbl.to_sql(tbl_name, sqlite_conn, if_exists="append", index=False)
             print("Finished\n")
+
+    # Incrementally load all omoccurrences
+    occids = omoccurrences_min["occid"].astype(str).tolist()
+    load_omoccurrences_table(
+        sql_uri_src,
+        sqlite_outfile,
+        omoccurrences_fields_dtypes.keys(),
+        occids,
+        omoccurrences_fields_dtypes
+    )
 
 
 if __name__ == "__main__":
