@@ -298,7 +298,7 @@ def get_taxaenumtree_table(cache_file, sql_uri_src, fields, initial_tids, dtypes
                 end='',
                 flush=True
             )
-            print("Found {} new taxa".format(len(tids)), flush=True)
+            print("Found {} new taxa".format(len(tids)), end='', flush=True)
 
             new_taxa = pd.read_sql(
                 "select distinct {} from taxaenumtree where tid in ({})".format(
@@ -369,15 +369,15 @@ def load_omoccurrences_table(sql_uri_src, sql_dst_file, fields, occids, dtypes):
     print("Loading omoccurrences from source database...")
 
     chunk_size = 1000000
-    offset = 0
     rows_loaded = 0
-    while True:
+    for i in range(0, len(occids), chunk_size):
+        query_size = i + chunk_size
+        if query_size > len(occids):
+            query_size = len(occids)
         omoccurrences_df = pd.read_sql(
-            "select {} from omoccurrences where occid in ({}) limit {} offset {}".format(
+            "select {} from omoccurrences where occid in ({})".format(
                 ", ".join(fields),
-                ", ".join(occids),
-                chunk_size,
-                offset
+                ", ".join(occids[i:query_size])
             ),
             sql_uri_src
         ).astype(dtypes)
@@ -402,10 +402,9 @@ def load_omoccurrences_table(sql_uri_src, sql_dst_file, fields, occids, dtypes):
             end='',
             flush=True
         )
-        print("Processed {} omoccurrences...".format(len(rows_loaded)), end='', flush=True)
-        if len(omoccurrences_df.index) < chunk_size:
+        print("Processed {} omoccurrences...".format(rows_loaded), end='', flush=True)
+        if query_size < chunk_size:
             break
-        offset += 1
     print("\nFound {} rows in omoccurrences".format(rows_loaded))
     print("Finished loading omoccurrences\n")
 
@@ -506,8 +505,16 @@ def main():
             tbl.to_sql(tbl_name, sqlite_conn, if_exists="append", index=False)
             print("Finished\n")
 
-    # Incrementally load all omoccurrences
+    # Free up some memory
     occids = omoccurrences_min["occid"].astype(str).tolist()
+    del omoccurrences_min
+    del tbl_institutions
+    del tbl_taxonunits
+    del tbl_omcollections
+    del tbl_taxaenumtree
+    del tbl_taxa
+
+    # Incrementally load all omoccurrences
     load_omoccurrences_table(
         sql_uri_src,
         sqlite_outfile,
