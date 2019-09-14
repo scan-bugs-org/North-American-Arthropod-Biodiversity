@@ -26,106 +26,106 @@ Y is year, M is month, and d is day. The structure of the sqlite output file is
 below.
 
 ### Tables
-    - institutions
-    - omcollections
-    - omoccurrences
-    - taxa
-    - taxaenumtree
-    - taxonunits
+- institutions
+- omcollections
+- omoccurrences
+- taxa
+- taxaenumtree
+- taxonunits
 
 ### Fields (primary keys, foreign keys in bold; arrows showing foreign key relationships):
-    - taxonunits
-        - **rankid**
-        - rankname
-        - initialTimestamp
-        - modifiedTimestamp
-    - institutions
-        - **iid**
-        - institutionCode
-        - city
-        - stateProvince
-        - postalCode
-        - country
-        - initialTimestamp
-        - modifiedTimestamp
-    - taxa
-        - **tid**
-        - **rankId --> taxonunits.rankid**
-        - sciName
-        - initialTimestamp
-        - modifiedTimestamp
-    - omcollections
-        - **collid**
-        - collectionCode
-        - collectionName
-        - **iid --> institutions.iid**
-        - collType
-        - managementType
-        - initialTimestamp
-        - modifiedTimestamp
-    - taxaenumtree
-        - **tid --> taxa.tid**
-        - **parenttid --> taxa.tid**
-        - initialTimestamp
-        - modifiedTimestamp
-    - omoccurrences
-        - **occid**
-        - associatedCollectors
-        - associatedOccurrences
-        - associatedTaxa
-        - catalogNumber
-        - **collid --> omcollections.collid**
-        - coordinatePrecision
-        - coordinateUncertaintyInMeters
-        - country
-        - county
-        - dateEntered
-        - dateIdentified
-        - day
-        - decimalLatitude
-        - decimalLongitude
-        - endDayOfYear
-        - eventDate
-        - family
-        - fieldNotes
-        - fieldnumber
-        - habitat
-        - identificationQualifier
-        - identificationReferences
-        - identificationRemarks
-        - identifiedBy
-        - infraspecificEpithet
-        - latestDateCollected
-        - lifeStage
-        - locality
-        - locationID
-        - locationRemarks
-        - month
-        - municipality
-        - occurrenceRemarks,
-        - otherCatalogNumbers
-        - ownerInstitutionCode
-        - previousIdentifications
-        - recordedBy
-        - samplingEffort
-        - samplingProtocol
-        - scientificName
-        - scientificNameAuthorship
-        - sciname
-        - sex
-        - specificEpithet
-        - startDayOfYear
-        - stateProvince
-        - substrate
-        - taxonRemarks
-        - **tidinterpreted --> taxa.tid**
-        - typeStatus
-        - verbatimAttributes
-        - verbatimElevation
-        - verbatimEventDate
-        - year
-        - initialTimestamp
-        - modifiedTimestamp
+- taxonunits
+    - **rankid**
+    - rankname
+    - initialTimestamp
+    - modifiedTimestamp
+- institutions
+    - **iid**
+    - institutionCode
+    - city
+    - stateProvince
+    - postalCode
+    - country
+    - initialTimestamp
+    - modifiedTimestamp
+- taxa
+    - **tid**
+    - **rankId --> taxonunits.rankid**
+    - sciName
+    - initialTimestamp
+    - modifiedTimestamp
+- omcollections
+    - **collid**
+    - collectionCode
+    - collectionName
+    - **iid --> institutions.iid**
+    - collType
+    - managementType
+    - initialTimestamp
+    - modifiedTimestamp
+- taxaenumtree
+    - **tid --> taxa.tid**
+    - **parenttid --> taxa.tid**
+    - initialTimestamp
+    - modifiedTimestamp
+- omoccurrences
+    - **occid**
+    - associatedCollectors
+    - associatedOccurrences
+    - associatedTaxa
+    - catalogNumber
+    - **collid --> omcollections.collid**
+    - coordinatePrecision
+    - coordinateUncertaintyInMeters
+    - country
+    - county
+    - dateEntered
+    - dateIdentified
+    - day
+    - decimalLatitude
+    - decimalLongitude
+    - endDayOfYear
+    - eventDate
+    - family
+    - fieldNotes
+    - fieldnumber
+    - habitat
+    - identificationQualifier
+    - identificationReferences
+    - identificationRemarks
+    - identifiedBy
+    - infraspecificEpithet
+    - latestDateCollected
+    - lifeStage
+    - locality
+    - locationID
+    - locationRemarks
+    - month
+    - municipality
+    - occurrenceRemarks,
+    - otherCatalogNumbers
+    - ownerInstitutionCode
+    - previousIdentifications
+    - recordedBy
+    - samplingEffort
+    - samplingProtocol
+    - scientificName
+    - scientificNameAuthorship
+    - sciname
+    - sex
+    - specificEpithet
+    - startDayOfYear
+    - stateProvince
+    - substrate
+    - taxonRemarks
+    - **tidinterpreted --> taxa.tid**
+    - typeStatus
+    - verbatimAttributes
+    - verbatimElevation
+    - verbatimEventDate
+    - year
+    - initialTimestamp
+    - modifiedTimestamp
 
 
 
