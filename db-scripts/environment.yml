@@ -1,0 +1,7 @@
+name: arthropod_biodiversity
+dependencies:
+  - pandas
+  - pip
+  - python=3
+  - sqlalchemy 
+  - mysqlclient

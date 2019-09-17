@@ -1,0 +1,4 @@
+*.sqlite
+.cache/
+meta/*.pkl
+*.zip
