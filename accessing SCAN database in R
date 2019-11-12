@@ -1,0 +1,17 @@
+install.packages(c("dbplyr", "RSQLite","dplyr"))
+library(dplyr)
+library(RSQLite)
+library(dbplyr)
+
+bugs <- DBI::dbConnect(RSQLite::SQLite(), "C:/Users/lma24/Dropbox/Symbiota_database/2019-09-14_symbscan.sqlite") #loading in the sql database
+src_dbi(bugs) #view database
+
+
+###the following just run test codes###
+test <- tbl(bugs, "omoccurrences")
+head(test)
+
+test2 = tbl(bugs, "omoccurrences")
+test2 %>%
+  select(sciname, decimalLatitude, decimalLongitude)
+test3 = as.data.frame(test2)
