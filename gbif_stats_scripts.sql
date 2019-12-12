@@ -39,7 +39,7 @@ SELECT clazz,COUNT(DISTINCT ordder),COUNT(DISTINCT familyy),COUNT(DISTINCT genus
 GROUP BY clazz,taxonomicstatus,taxonrank;
 
 -- sheet2: count of families, genera, and species for each order
-SELECT clazz,ordder,COUNT(DISTINCT familyyy),COUNT(DISTINCT genus),COUNT(*) from public.gbif_na_only WHERE taxonomicstatus='ACCEPTED' AND taxonrank='SPECIES'
+SELECT clazz,ordder,COUNT(DISTINCT familyy),COUNT(DISTINCT genus),COUNT(*) from public.gbif_na_only WHERE taxonomicstatus='ACCEPTED' AND taxonrank='SPECIES'
 GROUP BY clazz,ordder,taxonomicstatus,taxonrank;
 
 -- sheet3: count of genera, and species for each familyy
