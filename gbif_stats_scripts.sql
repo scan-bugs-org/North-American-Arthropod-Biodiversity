@@ -42,7 +42,7 @@ GROUP BY clazz,taxonomicstatus,taxonrank;
 SELECT clazz,ordder,COUNT(DISTINCT familyyy),COUNT(DISTINCT genus),COUNT(*) from public.gbif_na_only WHERE taxonomicstatus='ACCEPTED' AND taxonrank='SPECIES'
 GROUP BY clazz,ordder,taxonomicstatus,taxonrank;
 
---sheet3: count of genera, and species for each familyy
+-- sheet3: count of genera, and species for each familyy
 SELECT clazz,ordder,familyy,COUNT(DISTINCT genus),COUNT(*) from public.gbif_na_only WHERE taxonomicstatus='ACCEPTED' AND taxonrank='SPECIES'
 GROUP BY clazz,ordder,familyy,taxonomicstatus,taxonrank;
 
@@ -59,7 +59,7 @@ SELECT COUNT(DISTINCT clazz),COUNT(DISTINCT ordder),COUNT(DISTINCT familyy),COUN
 GROUP BY taxonomicstatus,taxonrank
 
 -- sheet6: how many UNRANKED classes, orders, families, genera, species
-e.g. "How many UNRANKED Lepidoptera have their highest identified rank at the level of Order?" (see "order_count" value for Lepidoptera)
+-- e.g. "How many UNRANKED Lepidoptera have their highest identified rank at the level of Order?" (see "order_count" value for Lepidoptera)
 SELECT clazz,COUNT(DISTINCT ordder),COUNT(DISTINCT familyy),COUNT(DISTINCT genus),COUNT(*) from public.gbif_na_only
 where taxonrank='UNRANKED'
 GROUP BY clazz,taxonrank;
