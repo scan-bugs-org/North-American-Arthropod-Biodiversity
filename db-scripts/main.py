@@ -111,7 +111,7 @@ def meta_load_sql_uri_src(mysql_config_file, db_name):
     config_parser = configparser.ConfigParser()
     config_parser.read(mysql_config_file)
     sql_config = config_parser["client"]
-    return "mysql://{}:{}@{}/{}".format(
+    return "mysql://{}:{}@{}/{}?charset=utf8mb4".format(
         sql_config["user"],
         sql_config["password"],
         sql_config["host"],
