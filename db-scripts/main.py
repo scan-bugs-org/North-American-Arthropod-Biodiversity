@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
 
 import configparser
-import numpy as np
 import os
-import pandas as pd
 import pickle as pkl
+import pykml.parser
 import sqlite3
-from datetime import datetime
 from datetime import date
+
+import numpy as np
+import pandas as pd
 
 ANSI_CURSOR_BEGINNING_OF_LINE = u"\u001b[1000D"
 ANSI_CURSOR_CLEAR_LINE = u"\u001b[0K"
 
 META_DIR = os.path.join(os.path.dirname(__file__), "meta")
-CACHE_DIR = os.path.join(os.path.dirname(__file__), ".cache")
+CACHE_DIR = os.path.join(os.getcwd(), ".cache")
 
 SQL_CONFIG_FILE = os.path.join(os.environ["HOME"], ".my.cnf")
 SQLITE_CREATE_FILE = os.path.join(os.path.dirname(__file__), "create-sqlite-db.sql")
@@ -23,8 +24,18 @@ OMOCCURRENCES_PROVINCES_FILE = os.path.join(META_DIR, "omoccurrences-states.pkl"
 TABLE_NAMES_FILE = os.path.join(META_DIR, "table-names.pkl")
 TAXA_FIELDS_FILE = os.path.join(META_DIR, "taxa-fields.pkl")
 
-OMOCCURRENCES_LATITUDE_RANGE = [-178.2, -49.0]
-OMOCCURRENCES_LONGITUDE_RANGE = [6.6, 83.3]
+with open(os.path.join(META_DIR, "NAmerica.kml"), "rb") as f:
+    kml_file = pykml.parser.fromstring(f.read())
+
+kml_coords = str(kml_file.Document.Placemark.Polygon.outerBoundaryIs.LinearRing.coordinates).strip()
+kml_coords = [p for p in kml_coords.split(" ")]
+kml_coords = [(float(lng), float(lat)) for lng, lat, alt in [p.split(",") for p in kml_coords]]
+
+lngs = [p[0] for p in kml_coords]
+lats = [p[1] for p in kml_coords]
+
+OMOCCURRENCES_LATITUDE_RANGE = [min(lats), max(lats)]
+OMOCCURRENCES_LONGITUDE_RANGE = [min(lngs), max(lngs)]
 
 OMOCCURRENCES_MIN_CACHE_FILE = os.path.join(CACHE_DIR, "occid.pkl.gz")
 OMOCCURRENCES_CACHE_FILE = os.path.join(CACHE_DIR, "tbl_omoccurrences.pkl.gz")
@@ -40,6 +51,7 @@ SQL_FMT_OCC_MIN += "or lower(country) in ({}) "
 SQL_FMT_OCC_MIN += "or lower(stateProvince) in ({});"
 
 kingdom_rankId = 10
+
 
 def sqlite_create_db(sqlite_create_script, sqlite_outfile):
     """
@@ -111,7 +123,7 @@ def meta_load_sql_uri_src(mysql_config_file, db_name):
     config_parser = configparser.ConfigParser()
     config_parser.read(mysql_config_file)
     sql_config = config_parser["client"]
-    return "mysql://{}:{}@{}/{}?charset=utf8mb4".format(
+    return "mysql://{}:{}@{}/{}?charset=utf8".format(
         sql_config["user"],
         sql_config["password"],
         sql_config["host"],
@@ -377,7 +389,7 @@ def load_omoccurrences_table(sql_uri_src, sql_dst_file, fields, occids, dtypes):
         omoccurrences_df = pd.read_sql(
             "select {} from omoccurrences where occid in ({})".format(
                 ", ".join(fields),
-                ", ".join(occids[i:query_size])
+                ", ".join(occids[i:query_size]),
             ),
             sql_uri_src
         ).astype(dtypes)
@@ -418,7 +430,7 @@ def main():
 
     # Load metadata
     today_timestamp = date.today().strftime("%Y-%m-%d")
-    sqlite_outfile = os.path.join(os.path.dirname(__file__), "{}_symbscan.sqlite".format(today_timestamp))
+    sqlite_outfile = os.path.join(os.getcwd(), "{}_symbscan.sqlite".format(today_timestamp))
     table_names = meta_load_table_names(TABLE_NAMES_FILE)
     table_fields = meta_load_table_fields(table_names)
     omoccurrences_provinces = meta_load_omoccurrences_provinces(OMOCCURRENCES_PROVINCES_FILE)
@@ -428,6 +440,9 @@ def main():
     # Create cache directory
     if not os.path.exists(CACHE_DIR):
         os.mkdir(CACHE_DIR)
+
+    if os.path.exists(sqlite_outfile):
+        os.remove(sqlite_outfile)
 
     taxonunits_fields_dtypes = table_fields["taxonunits"]
     taxonunits_field_names = taxonunits_fields_dtypes.keys()
@@ -444,8 +459,8 @@ def main():
         sql_uri_src,
         omoccurrences_countries,
         omoccurrences_provinces,
-        OMOCCURRENCES_LONGITUDE_RANGE,
         OMOCCURRENCES_LATITUDE_RANGE,
+        OMOCCURRENCES_LONGITUDE_RANGE,
         {k: v for k, v in omoccurrences_fields_dtypes.items() if k in ["occid", "collid", "tidinterpreted"]}
     )
 

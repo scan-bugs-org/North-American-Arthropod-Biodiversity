@@ -2,3 +2,6 @@
 .cache/
 meta/*.pkl
 *.zip
+.env/
+occurrence.txt
+.idea/
