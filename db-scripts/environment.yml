@@ -6,5 +6,6 @@ dependencies:
   - sqlalchemy 
   - mysqlclient
   - flask
+  - gunicorn
   - pip:
       - pykml

@@ -5,3 +5,4 @@ meta/*.pkl
 .env/
 occurrence.txt
 .idea/
+**/*.pyc
