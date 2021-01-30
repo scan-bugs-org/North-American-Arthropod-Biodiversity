@@ -45,10 +45,20 @@ TAXAENUMTREE_CACHE_FILE = os.path.join(CACHE_DIR, "tbl_taxaenumtree.pkl.gz")
 TAXONUNITS_CACHE_FILE = os.path.join(CACHE_DIR, "tbl_taxonunits.pkl.gz")
 INSTITUTIONS_CACHE_FILE = os.path.join(CACHE_DIR, "tbl_institutions.pkl.gz")
 
-SQL_FMT_OCC_MIN = "select occid, collid, tidinterpreted from omoccurrences "
-SQL_FMT_OCC_MIN += "where (decimalLatitude between {} and {} and decimalLongitude between {} and {}) "
+TARGET_FAMILIES = [
+    'melittidae',
+    'colletidae',
+    'apidae',
+    'megachilidae',
+    'halictidae',
+    'andrenidae'
+]
+
+SQL_FMT_OCC_MIN = "select o.occid, o.collid, o.tidinterpreted from omoccurrences o "
+SQL_FMT_OCC_MIN += "where LOWER(o.family) IN ({}) ".format(','.join(["'{}'".format(f) for f in TARGET_FAMILIES]))
+SQL_FMT_OCC_MIN += "and ((decimalLatitude between {} and {} and decimalLongitude between {} and {}) "
 SQL_FMT_OCC_MIN += "or lower(country) in ({}) "
-SQL_FMT_OCC_MIN += "or lower(stateProvince) in ({});"
+SQL_FMT_OCC_MIN += "or lower(stateProvince) in ({}));"
 
 kingdom_rankId = 10
 
@@ -195,7 +205,7 @@ def get_omoccurrences_min(cache_file, sql_uri_src, occ_countries, occ_provinces,
     return occid_df
 
 
-def get_omcollections_table(cache_file, sql_uri_src, fields, collids, dtypes):
+def get_omcollections_table(cache_file, sql_uri_src, fields, dtypes):
     """
     :param cache_file: Path where omcollections table should be cached
     :param sql_uri_src: SQL URI to query
@@ -208,9 +218,8 @@ def get_omcollections_table(cache_file, sql_uri_src, fields, collids, dtypes):
     if not os.path.exists(cache_file):
         print("Loading omcollections from source database...")
         omcollections_df = pd.read_sql(
-            "select {} from omcollections where collid in ({})".format(
+            "select {} from omcollections".format(
                 ", ".join(fields),
-                ", ".join(collids)
             ),
             sql_uri_src
         ).astype(dtypes)
@@ -223,7 +232,7 @@ def get_omcollections_table(cache_file, sql_uri_src, fields, collids, dtypes):
     return omcollections_df
 
 
-def get_institutions_table(cache_file, sql_uri_src, fields, iids, dtypes):
+def get_institutions_table(cache_file, sql_uri_src, fields, dtypes):
     """
     :param cache_file: Path where omcollections table should be cached
     :param sql_uri_src: SQL URI to query
@@ -236,9 +245,8 @@ def get_institutions_table(cache_file, sql_uri_src, fields, iids, dtypes):
     if not os.path.exists(cache_file):
         print("Loading institutions from source database...")
         institutions_df = pd.read_sql(
-            "select {} from institutions where iid in ({})".format(
+            "select {} from institutions".format(
                 ", ".join(fields),
-                ", ".join(iids)
             ),
             sql_uri_src
         ).astype(dtypes)
@@ -398,6 +406,7 @@ def load_omoccurrences_table(sql_uri_src, sql_dst_file, fields, occids, dtypes):
                      "dateLastModified": "modifiedTimestamp"},
             inplace=True
         )
+        omoccurrences_df["source"] = "scan"
         with sqlite3.connect(sql_dst_file) as sqlite_conn:
             omoccurrences_df.to_sql(
                 "omoccurrences",
@@ -415,7 +424,7 @@ def load_omoccurrences_table(sql_uri_src, sql_dst_file, fields, occids, dtypes):
             flush=True
         )
         print("Processed {} omoccurrences...".format(rows_loaded), end='', flush=True)
-        if query_size < chunk_size:
+        if query_size == 0:
             break
     print("\nFound {} rows in omoccurrences".format(rows_loaded))
     print("Finished loading omoccurrences\n")
@@ -470,7 +479,6 @@ def main():
         OMCOLLECTIONS_CACHE_FILE,
         sql_uri_src,
         omcollections_field_names,
-        np.unique(omoccurrences_min["collid"]).astype(str).tolist(),
         omcollections_fields_dtypes
     )
 
@@ -480,7 +488,6 @@ def main():
         INSTITUTIONS_CACHE_FILE,
         sql_uri_src,
         institutions_field_names,
-        np.unique(tbl_omcollections["iid"][~pd.isna(tbl_omcollections["iid"])]).astype(str).tolist(),
         institutions_fields_dtypes
     )
 
@@ -541,4 +548,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
