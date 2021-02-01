@@ -1,0 +1,53 @@
+aguascalientes
+alabama
+alaska
+alberta
+baja california
+baja california sur
+british columbia
+campeche
+chiapas
+chihuahua
+coahuila
+colima
+durango
+guanajuato
+guerrero
+hidalgo
+ignacio de la llave
+jalisco
+manitoba
+mexico
+mexico city
+michoacán
+morelos
+méxico
+nayarit
+new brunswick
+newfoundland and labrador
+northwest territories
+nova scotia
+nuevo leon
+nuevo león
+nunavut
+oaxaca
+ontario
+prince edward island
+puebla
+quebec
+queretaro
+querétaro
+quintana roo
+san luis potosi
+san luis potosí
+saskatchewan
+sinaloa
+sonora
+tabasco
+tamaulipas
+tlaxcala
+veracruz
+yucatan
+yucatán
+yukon
+zacatecas

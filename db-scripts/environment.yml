@@ -1,11 +1,9 @@
 name: arthropod_biodiversity
 dependencies:
+  - jupyter
   - pandas
   - pip
+  - pymysql 
   - python=3
-  - sqlalchemy 
-  - mysqlclient
-  - flask
-  - gunicorn
   - pip:
       - pykml
