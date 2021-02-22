@@ -7,3 +7,4 @@ occurrence.txt
 .idea/
 **/*.pyc
 .ipynb_checkpoints/
+**/*.csv
