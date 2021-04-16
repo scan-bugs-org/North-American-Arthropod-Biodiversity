@@ -1,10 +1,12 @@
 *.sqlite
 .cache/
 meta/*.pkl
-*.zip
 .env/
 occurrence.txt
 .idea/
 **/*.pyc
 .ipynb_checkpoints/
 **/*.csv
+
+*.zip
+!continental_us_bounds.zip
